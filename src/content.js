@@ -2,6 +2,9 @@
 //  content.js  v3.0.0（各ページで動く本体）
 //
 //  v3.0.0: トースト文言を多言語化（_locales）
+//  v3.0.0 Pro: settings.js の設定値（色・最小文字数・除外ドメイン・複数語・iframe）を
+//    ライセンス有効時のみ適用。無効時はデフォルト値で従来どおり動く。
+//    既存関数は変えず、入口（選択送信・HIGHLIGHT 受信・スタイル注入）で分岐する。
 //
 //  v2.3 での修正（非アクティブ画面のハイライト遅延対応）
 //   - 非アクティブなタブ／ウィンドウで、以前フォーカスしていた編集欄を
@@ -25,7 +28,6 @@
   const STYLE_ID = "cwh-style";
   const TOAST_ID = "cwh-toast";
 
-  const MIN_LEN = 2;
   const DEBOUNCE = 200;
   const SAME_TEXT_RESEND_MS = 700;
   const MUTATION_DEBOUNCE = 120;
@@ -42,6 +44,26 @@
 
   let currentText = "";
   let latestRevision = 0;
+
+  // ================= Pro 設定 =================
+  let pro = { ...CWH_DEFAULT_SETTINGS };
+  let excluded = false;
+  const isSubFrame = window !== window.top;
+  const MIN_LEN = () => pro.minLen;
+
+  // このフレームで動いてよいか（除外ドメイン / iframe 設定）
+  function isActiveHere() {
+    if (excluded) return false;
+    if (isSubFrame && !pro.iframes) return false;
+    return true;
+  }
+
+  async function loadProSettings() {
+    const [settings, license] = await Promise.all([cwhLoadSettings(), cwhLoadLicense()]);
+    pro = cwhEffectiveSettings(settings, license);
+    excluded = cwhIsExcludedHost(location.hostname, pro.excludedDomains);
+  }
+  const proReady = loadProSettings();
   let mutationTimer = null;
   let observer = null;
   let pendingReapply = false;
@@ -93,17 +115,21 @@
 
     const st = document.createElement("style");
     st.id = STYLE_ID;
+    const multi = CWH_MULTI_COLORS.map(
+      (c, i) => `mark.${MARK_CLASS}.${MARK_CLASS}-${i + 1}{background:${c} !important;}`,
+    ).join("\n");
     st.textContent = `
       mark.${MARK_CLASS}{
-        background:#ffe58a !important;
+        background:${pro.markColor} !important;
         color:inherit !important;
         padding:0;
         border-radius:2px;
       }
+      ${multi}
       .${INPUT_CLASS}{
-        outline:3px solid #ffb300 !important;
+        outline:3px solid ${pro.inputColor} !important;
         outline-offset:1px;
-        background-color:#fff6d5 !important;
+        background-color:color-mix(in srgb, ${pro.inputColor} 22%, white) !important;
       }
       #${TOAST_ID}{
         position:fixed;
@@ -211,11 +237,87 @@
     return ranges.length;
   }
 
+  // ★ Pro: 複数語（改行・読点・カンマ区切り）。2語以上のときだけこちらを通る。
+  function highlightMulti(terms) {
+    injectStyle();
+    let count = 0;
+
+    document.querySelectorAll("input, textarea").forEach((el) => {
+      const value = normalize(el.value || "");
+      if (value && terms.some((t) => value.includes(t))) {
+        el.classList.add(INPUT_CLASS);
+        count++;
+      }
+    });
+
+    if (!document.body) return count;
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        const tag = parent.tagName;
+        if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT" || tag === "TEXTAREA") {
+          return NodeFilter.FILTER_REJECT;
+        }
+        if (parent.isContentEditable || parent.closest("[contenteditable]")) return NodeFilter.FILTER_REJECT;
+        if (parent.closest(`mark.${MARK_CLASS}`)) return NodeFilter.FILTER_REJECT;
+        const n = normalize(node.nodeValue);
+        return terms.some((t) => n.includes(t)) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      },
+    });
+
+    const targets = [];
+    let node;
+    while ((node = walker.nextNode())) targets.push(node);
+
+    for (const target of targets) {
+      const orig = target.nodeValue;
+      const { norm, map } = buildNormalized(orig);
+      const ranges = [];
+      terms.forEach((term, ti) => {
+        let from = 0;
+        let idx;
+        while ((idx = norm.indexOf(term, from)) !== -1) {
+          ranges.push([map[idx], map[idx + term.length - 1] + 1, ti]);
+          from = idx + term.length;
+        }
+      });
+      if (!ranges.length) continue;
+      ranges.sort((a, b) => a[0] - b[0] || b[1] - a[1]);
+
+      const frag = document.createDocumentFragment();
+      let cursor = 0;
+      for (const [start, end, ti] of ranges) {
+        if (start < cursor) continue; // 重なりは先勝ち
+        if (start > cursor) frag.appendChild(document.createTextNode(orig.slice(cursor, start)));
+        const mark = document.createElement("mark");
+        mark.className = ti === 0 ? MARK_CLASS : `${MARK_CLASS} ${MARK_CLASS}-${((ti - 1) % CWH_MULTI_COLORS.length) + 1}`;
+        mark.textContent = orig.slice(start, end);
+        frag.appendChild(mark);
+        cursor = end;
+        count++;
+      }
+      if (cursor < orig.length) frag.appendChild(document.createTextNode(orig.slice(cursor)));
+      target.parentNode.replaceChild(frag, target);
+    }
+    return count;
+  }
+
   function highlight(searchText) {
     clearHighlights();
 
+    // ★ Pro: 複数語モード。1語のときは従来の経路と同じ処理になる。
+    if (pro.multiKeyword) {
+      const terms = [...new Set(cwhSplitKeywords(searchText).map(normalize).filter((t) => t.length >= MIN_LEN()))];
+      if (terms.length === 0) return 0;
+      if (terms.length > 1) return highlightMulti(terms);
+      searchText = terms[0];
+    }
+
     const term = normalize(searchText);
-    if (term.length < MIN_LEN) return 0;
+    if (term.length < MIN_LEN()) return 0;
 
     injectStyle();
     let count = 0;
@@ -346,6 +448,11 @@
     latestRevision = revision;
     currentText = text;
 
+    // ★ Pro: 除外ドメイン、または iframe 設定 OFF のサブフレームでは付けない
+    if (!isActiveHere()) {
+      return { count: 0, excluded: true };
+    }
+
     // ★ v2.3: 実際にこのページへフォーカスがあり、
     //   リッチテキストエディタを編集中の場合だけ保留する。
     //   非アクティブ画面では activeElement が残っていても即時反映する。
@@ -383,12 +490,12 @@
   }
 
   function onSelectionMaybeChanged() {
-    if (!enabled) return;
+    if (!enabled || !isActiveHere()) return;
 
     clearTimeout(timer);
     timer = setTimeout(() => {
       const raw = getSelectionText().trim();
-      const text = normalize(raw).length >= MIN_LEN ? raw : "";
+      const text = normalize(raw).length >= MIN_LEN() ? raw : "";
 
       // タブ切替やウィンドウ切替による一時的な空選択は送らない。
       if (!text && !document.hasFocus()) return;
@@ -430,7 +537,25 @@
 
   chrome.storage.local.get("enabled", (result) => {
     enabled = result.enabled !== false;
-    syncStateFromBackground();
+    proReady.then(syncStateFromBackground);
+  });
+
+  // ★ Pro: 設定やライセンスが変わったら、色・除外・分割を反映し直す
+  chrome.storage.onChanged.addListener((changes, area) => {
+    const hit = (area === "sync" && changes[CWH_SETTINGS_KEY]) || (area === "local" && changes[CWH_LICENSE_KEY]);
+    if (!hit) return;
+    loadProSettings().then(() => {
+      document.getElementById(STYLE_ID)?.remove();
+      if (!isActiveHere()) {
+        observer?.disconnect();
+        clearHighlights();
+        startObserver();
+        return;
+      }
+      injectStyle();
+      if (enabled && currentText) applyCurrentHighlight();
+      else syncStateFromBackground();
+    });
   });
 
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -447,22 +572,27 @@
       syncStateFromBackground();
     }
 
-    if (document.hasFocus()) {
+    if (document.hasFocus() && !isSubFrame) {
       toast(chrome.i18n.getMessage(enabled ? "toastOn" : "toastOff"));
     }
   });
 
   // ================= メッセージ受信 =================
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    // ★ Pro: サブフレームは処理はするが応答は返さない。
+    //   tabs.sendMessage は最初に返った応答だけを採用するため、
+    //   iframe が先に応答すると親フレームのヒット件数が失われる。
+    const reply = isSubFrame ? () => {} : sendResponse;
+
     if (msg?.type === "HIGHLIGHT") {
       const revision = Number.isFinite(msg.revision) ? msg.revision : 0;
-      sendResponse(setRemoteHighlight(msg.text || "", revision));
+      reply(setRemoteHighlight(msg.text || "", revision));
       return;
     }
 
     if (msg?.type === "CLEAR") {
       const revision = Number.isFinite(msg.revision) ? msg.revision : 0;
-      sendResponse(clearRemoteHighlight(revision));
+      reply(clearRemoteHighlight(revision));
       return;
     }
   });

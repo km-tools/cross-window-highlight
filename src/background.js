@@ -8,7 +8,11 @@
 //   - 現在の検索語を storage.session に保持し、再読込したタブへ復元
 //   - content.js は、メッセージ送信失敗時だけ再注入
 //   - v3.0.0: ポップアップ追加（ON/OFF はポップアップ内スイッチ）、休止タブを除外
+//   - v3.0.0 Pro: 設定（settings.js）とライセンス（license.js）。除外ドメイン・
+//     ヒット件数バッジ・iframe 注入は、ライセンス有効時の設定値でのみ切り替わる
 // ============================================================================
+
+importScripts("settings.js", "license.js");
 
 const LOG = (...a) => console.log("[CWH]", ...a);
 const WARN = (...a) => console.warn("[CWH]", ...a);
@@ -18,6 +22,23 @@ const SESSION_KEY = "highlightState";
 
 let clearTimer = null;
 let revisionCounter = 0;
+
+// Pro 設定（ライセンス無効ならデフォルト値）。storage の変化で更新する。
+let proSettings = { ...CWH_DEFAULT_SETTINGS };
+async function refreshProSettings() {
+  const [settings, license] = await Promise.all([cwhLoadSettings(), cwhLoadLicense()]);
+  proSettings = cwhEffectiveSettings(settings, license);
+  return proSettings;
+}
+const proReady = refreshProSettings();
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if ((area === "sync" && changes[CWH_SETTINGS_KEY]) || (area === "local" && changes[CWH_LICENSE_KEY])) {
+    refreshProSettings().then(() => {
+      if (!proSettings.hitBadge) getEnabled().then(updateBadge);
+    });
+  }
+});
 let currentState = {
   text: "",
   sourceTabId: null,
@@ -26,8 +47,22 @@ let currentState = {
 
 function isBlocked(url) {
   if (!url) return true;
-  return /^(edge|chrome|about|devtools|view-source|extension|chrome-extension):/i.test(url)
-    || /microsoftedge\.microsoft\.com|chromewebstore\.google\.com|chrome\.google\.com\/webstore/i.test(url);
+  if (/^(edge|chrome|about|devtools|view-source|extension|chrome-extension):/i.test(url)
+    || /microsoftedge\.microsoft\.com|chromewebstore\.google\.com|chrome\.google\.com\/webstore/i.test(url)) {
+    return true;
+  }
+  // Pro: 除外ドメイン
+  try {
+    if (cwhIsExcludedHost(new URL(url).hostname, proSettings.excludedDomains)) return true;
+  } catch (e) { /* URL でなければ通す */ }
+  return false;
+}
+
+// Pro: ヒット件数バッジ（ON 中だけ。OFF 時は "OFF" のまま）
+function updateHitBadge(hit) {
+  if (!proSettings.hitBadge) return;
+  chrome.action.setBadgeText({ text: hit > 0 ? String(hit > 999 ? "999+" : hit) : "ON" });
+  chrome.action.setBadgeBackgroundColor({ color: hit > 0 ? "#d98c00" : "#1d9e75" });
 }
 
 function updateBadge(on) {
@@ -76,7 +111,7 @@ const stateReady = loadSessionState();
 async function ensureInjected(tabId) {
   try {
     await chrome.scripting.executeScript({
-      target: { tabId, allFrames: false },
+      target: { tabId, allFrames: proSettings.iframes === true },
       files: ["content.js"],
     });
     return true;
@@ -124,6 +159,7 @@ async function broadcastHighlight(text, sourceTabId, revision) {
   // 処理中に新しい選択が来ていなければログを出す。
   if (currentState.revision === revision) {
     LOG("選択:", JSON.stringify(text), "→ ヒット", hit, "revision", revision);
+    updateHitBadge(hit);
   }
 }
 
@@ -148,6 +184,7 @@ async function clearCurrent(reason) {
   };
   await saveSessionState();
   await broadcastClear(revision);
+  if (proSettings.hitBadge && (await getEnabled())) updateBadge(true);
   LOG("ハイライト解除:", reason, "revision", revision);
 }
 
@@ -163,7 +200,10 @@ async function setEnabled(on) {
 
 async function handleSelectionChanged(msg, sender) {
   await stateReady;
+  await proReady;
   if (!(await getEnabled())) return;
+  // Pro: 除外ドメインからの選択は受け付けない
+  if (isBlocked(sender.tab?.url)) return;
 
   const sourceTabId = sender.tab?.id;
   if (!Number.isInteger(sourceTabId)) return;
@@ -215,6 +255,9 @@ chrome.runtime.onStartup.addListener(async () => {
 // Service Worker が途中で再起動した場合にもバッジを同期する。
 stateReady.then(async () => updateBadge(await getEnabled()));
 
+// ライセンスの定期再検証（7日ごと。オフラインなら前回結果を維持）
+proReady.then(() => CWHLicense.revalidate().catch((e) => WARN("ライセンス再検証に失敗", e)));
+
 // ---- ショートカット: ON/OFF トグル ----
 chrome.commands.onCommand.addListener(async (command) => {
   if (command !== "toggle-highlight") return;
@@ -239,6 +282,43 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     })().catch((e) => {
       WARN("ON/OFF の切り替えに失敗", e);
       sendResponse({ ok: false });
+    });
+    return true;
+  }
+
+  // ---- Pro: ライセンス ----
+  if (msg?.type === "LICENSE_ACTIVATE") {
+    (async () => {
+      const lic = await CWHLicense.activate(msg.key);
+      await refreshProSettings();
+      sendResponse(CWHLicense.publicInfo(lic, await cwhLicenseRuntimeConfig()));
+    })().catch((e) => {
+      WARN("ライセンス認証に失敗", e);
+      sendResponse({ valid: false, error: "network" });
+    });
+    return true;
+  }
+
+  if (msg?.type === "LICENSE_DEACTIVATE") {
+    (async () => {
+      await CWHLicense.deactivate();
+      await refreshProSettings();
+      sendResponse(CWHLicense.publicInfo(null, await cwhLicenseRuntimeConfig()));
+    })().catch((e) => {
+      WARN("ライセンス解除に失敗", e);
+      sendResponse({ valid: false, error: "network" });
+    });
+    return true;
+  }
+
+  if (msg?.type === "LICENSE_INFO") {
+    (async () => {
+      const lic = msg.revalidate ? await CWHLicense.revalidate(true) : await CWHLicense.load();
+      if (msg.revalidate) await refreshProSettings();
+      sendResponse(CWHLicense.publicInfo(lic, await cwhLicenseRuntimeConfig()));
+    })().catch((e) => {
+      WARN("ライセンス情報の取得に失敗", e);
+      sendResponse({ valid: false, error: "network" });
     });
     return true;
   }
