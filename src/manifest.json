@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "クロスウィンドウ・ハイライト",
+  "version": "2.1.1",
+  "description": "ONの間、文字を選択すると他のタブ／ウィンドウの一致箇所を自動ハイライトします。競合防止・再描画復元に対応しています。",
+  "permissions": [
+    "tabs",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "クロスウィンドウ・ハイライト（クリックでON/OFF）"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "commands": {
+    "toggle-highlight": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+H",
+        "mac": "Command+Shift+H"
+      },
+      "description": "ハイライト機能のON/OFF"
+    }
+  }
+}
