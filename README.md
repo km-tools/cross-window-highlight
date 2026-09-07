@@ -7,7 +7,7 @@ ON の間、文字を選択すると、他のタブ／ウィンドウの一致�
 - ハイフンや空白の違いも無視します。長音符「ー」は語の一部として扱います
 - `input` / `textarea` の中身は枠で示します
 - リッチテキストエディタ（contenteditable）の中は書き換えません。入力中は再ハイライトを保留します
-- データは一切収集しません。選択文字列は端末内のタブ間でしか受け渡されません（[プライバシーポリシー](docs/privacy.md)）
+- データは一切収集しません。選択文字列は端末内のタブ間でしか受け渡されません（[プライバシーポリシー](https://km-tools.github.io/cross-window-highlight/privacy.html)）
 
 ## インストール
 
@@ -17,7 +17,7 @@ ON の間、文字を選択すると、他のタブ／ウィンドウの一致�
 
 ### 開発者向け（パッケージ化されていない拡張機能として読み込む）
 
-1. このリポジトリを clone する
+1. このリポジトリを clone する（`git clone https://github.com/km-tools/cross-window-highlight.git`）
 2. Chrome で `chrome://extensions` を開く
 3. 右上の「デベロッパーモード」を ON にする
 4. 「パッケージ化されていない拡張機能を読み込む」で `src/` フォルダを選ぶ
@@ -142,4 +142,7 @@ e2e は puppeteer-core でインストール済みの Chrome を起動し、2タ
 
 ## ライセンス
 
-未定。
+MIT License。詳細は [LICENSE](LICENSE) を参照。
+
+- ソースコード: https://github.com/km-tools/cross-window-highlight
+- 公開ページ・プライバシーポリシー: https://km-tools.github.io/cross-window-highlight/

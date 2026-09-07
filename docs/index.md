@@ -24,9 +24,9 @@ Built for side-by-side checking and reconciliation work.
 データは一切収集しません。選択した文字列は端末内のタブ間でしか受け渡されません。
 We collect no data. Selected text never leaves your device.
 
-→ [プライバシーポリシー / Privacy Policy](privacy.md)
+→ [プライバシーポリシー / Privacy Policy](privacy.html)
 
 ## リンク / Links
 
-- ソースコード / Source: GitHub（準備中 / coming soon）
+- ソースコード / Source: [GitHub](https://github.com/km-tools/cross-window-highlight)（MIT License）
 - Chrome ウェブストア / Chrome Web Store: 準備中 / coming soon

@@ -50,7 +50,7 @@ Polar 側でのデータの扱いは [Polar のプライバシーポリシー](h
 
 ### お問い合わせ
 
-GitHub リポジトリの Issues からご連絡ください。
+[GitHub リポジトリの Issues](https://github.com/km-tools/cross-window-highlight/issues) からご連絡ください。
 
 ---
 
@@ -99,4 +99,4 @@ If this policy changes, this page will be updated and the extension version will
 
 ### Contact
 
-Please use the Issues page of the GitHub repository.
+Please use the [Issues page of the GitHub repository](https://github.com/km-tools/cross-window-highlight/issues).
