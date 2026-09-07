@@ -1,24 +1,148 @@
 {
-  "extName": { "message": "クロスウィンドウ・ハイライト" },
-  "extDescription": { "message": "ONの間、文字を選択すると他のタブ／ウィンドウの一致箇所を自動ハイライトします。2画面での照合・突合作業に。" },
-  "actionTitle": { "message": "クロスウィンドウ・ハイライト" },
-  "cmdToggleDescription": { "message": "ハイライト機能のON/OFF" },
-  "toastOn": { "message": "ハイライト ON" },
-  "toastOff": { "message": "ハイライト OFF" },
-  "popupToggleLabel": { "message": "ハイライト" },
-  "popupStatusOn": { "message": "ON" },
-  "popupStatusOff": { "message": "OFF" },
-  "popupHintOn": { "message": "文字を選択すると、他のタブ／ウィンドウの一致箇所を光らせます。" },
-  "popupHintOff": { "message": "OFF の間は何もしません。" },
-  "popupCurrentLabel": { "message": "いまハイライト中" },
-  "popupCurrentEmpty": { "message": "（なし）" },
-  "popupShortcutLabel": { "message": "ショートカット" },
-  "popupShortcutUnset": { "message": "未設定" },
-  "popupShortcutHint": { "message": "ON/OFF の切り替え" },
-  "popupShortcutOpen": { "message": "ショートカットを変更" },
-  "popupEscHint": { "message": "Esc キーで、そのページのハイライトだけ消せます。" },
-  "popupProTitle": { "message": "Pro 機能" },
-  "popupProComingSoon": { "message": "準備中" },
-  "popupProDesc": { "message": "ハイライト色の変更、除外ドメイン、複数キーワードの同時ハイライトなどを予定しています。" },
-  "popupVersion": { "message": "バージョン $VERSION$", "placeholders": { "VERSION": { "content": "$1" } } }
+  "extName": {
+    "message": "クロスウィンドウ・ハイライト"
+  },
+  "extDescription": {
+    "message": "ONの間、文字を選択すると他のタブ／ウィンドウの一致箇所を自動ハイライトします。2画面での照合・突合作業に。"
+  },
+  "actionTitle": {
+    "message": "クロスウィンドウ・ハイライト"
+  },
+  "cmdToggleDescription": {
+    "message": "ハイライト機能のON/OFF"
+  },
+  "toastOn": {
+    "message": "ハイライト ON"
+  },
+  "toastOff": {
+    "message": "ハイライト OFF"
+  },
+  "popupToggleLabel": {
+    "message": "ハイライト"
+  },
+  "popupStatusOn": {
+    "message": "ON"
+  },
+  "popupStatusOff": {
+    "message": "OFF"
+  },
+  "popupHintOn": {
+    "message": "文字を選択すると、他のタブ／ウィンドウの一致箇所を光らせます。"
+  },
+  "popupHintOff": {
+    "message": "OFF の間は何もしません。"
+  },
+  "popupCurrentLabel": {
+    "message": "いまハイライト中"
+  },
+  "popupCurrentEmpty": {
+    "message": "（なし）"
+  },
+  "popupShortcutLabel": {
+    "message": "ショートカット"
+  },
+  "popupShortcutUnset": {
+    "message": "未設定"
+  },
+  "popupShortcutHint": {
+    "message": "ON/OFF の切り替え"
+  },
+  "popupShortcutOpen": {
+    "message": "ショートカットを変更"
+  },
+  "popupEscHint": {
+    "message": "Esc キーで、そのページのハイライトだけ消せます。"
+  },
+  "popupProTitle": {
+    "message": "Pro 機能"
+  },
+  "popupProComingSoon": {
+    "message": "準備中"
+  },
+  "popupProDesc": {
+    "message": "ハイライト色の変更、除外ドメイン、複数キーワードの同時ハイライトなど。"
+  },
+  "popupVersion": {
+    "message": "バージョン $VERSION$",
+    "placeholders": {
+      "VERSION": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupProActive": {
+    "message": "有効"
+  },
+  "popupProLocked": {
+    "message": "未購入"
+  },
+  "popupLicenseLabel": {
+    "message": "ライセンスキー"
+  },
+  "popupLicenseActivate": {
+    "message": "認証"
+  },
+  "popupLicenseChecking": {
+    "message": "確認中…"
+  },
+  "popupLicenseBuy": {
+    "message": "Pro 版を購入する"
+  },
+  "popupLicenseActive": {
+    "message": "Pro 有効"
+  },
+  "popupLicenseRecheck": {
+    "message": "再確認"
+  },
+  "popupLicenseDeactivate": {
+    "message": "この端末の認証を解除"
+  },
+  "popupLicenseOk": {
+    "message": "認証しました。Pro 機能が使えます。"
+  },
+  "popupLicenseErrInvalid": {
+    "message": "このキーは無効です。入力を確認してください。"
+  },
+  "popupLicenseErrLimit": {
+    "message": "このキーは利用できる端末数の上限に達しています。他の端末で解除してください。"
+  },
+  "popupLicenseErrNetwork": {
+    "message": "確認サーバーに接続できません。しばらくしてからもう一度お試しください。"
+  },
+  "popupLicenseErrConfig": {
+    "message": "ライセンス認証はまだ準備中です。"
+  },
+  "popupLicenseErrRevoked": {
+    "message": "このキーは無効化されています。"
+  },
+  "popupLicenseErrExpired": {
+    "message": "このキーは期限切れです。"
+  },
+  "popupLicenseOffline": {
+    "message": "オフラインのため前回の確認結果を使っています。"
+  },
+  "popupSetMarkColor": {
+    "message": "ハイライトの色"
+  },
+  "popupSetInputColor": {
+    "message": "入力欄の枠の色"
+  },
+  "popupSetMinLen": {
+    "message": "最小文字数（1〜10）"
+  },
+  "popupSetHitBadge": {
+    "message": "ヒット件数をアイコンに表示"
+  },
+  "popupSetMultiKeyword": {
+    "message": "改行・読点・カンマで区切って複数語を同時にハイライト"
+  },
+  "popupSetIframes": {
+    "message": "iframe の中もハイライト"
+  },
+  "popupSetExcluded": {
+    "message": "除外ドメイン（1行に1つ）"
+  },
+  "popupSetReset": {
+    "message": "設定を初期値に戻す"
+  }
 }

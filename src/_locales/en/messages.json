@@ -1,24 +1,148 @@
 {
-  "extName": { "message": "Cross-Window Highlight" },
-  "extDescription": { "message": "While ON, selecting text automatically highlights every match in your other tabs and windows. Built for side-by-side checking and reconciliation work." },
-  "actionTitle": { "message": "Cross-Window Highlight" },
-  "cmdToggleDescription": { "message": "Turn highlighting ON/OFF" },
-  "toastOn": { "message": "Highlight ON" },
-  "toastOff": { "message": "Highlight OFF" },
-  "popupToggleLabel": { "message": "Highlight" },
-  "popupStatusOn": { "message": "ON" },
-  "popupStatusOff": { "message": "OFF" },
-  "popupHintOn": { "message": "Select text and matches light up in your other tabs and windows." },
-  "popupHintOff": { "message": "Nothing happens while OFF." },
-  "popupCurrentLabel": { "message": "Currently highlighting" },
-  "popupCurrentEmpty": { "message": "(nothing)" },
-  "popupShortcutLabel": { "message": "Shortcut" },
-  "popupShortcutUnset": { "message": "Not set" },
-  "popupShortcutHint": { "message": "Toggle ON/OFF" },
-  "popupShortcutOpen": { "message": "Change shortcut" },
-  "popupEscHint": { "message": "Press Esc to clear highlights on the current page only." },
-  "popupProTitle": { "message": "Pro features" },
-  "popupProComingSoon": { "message": "Coming soon" },
-  "popupProDesc": { "message": "Planned: custom highlight colors, excluded domains, multiple keywords at once, and more." },
-  "popupVersion": { "message": "Version $VERSION$", "placeholders": { "VERSION": { "content": "$1" } } }
+  "extName": {
+    "message": "Cross-Window Highlight"
+  },
+  "extDescription": {
+    "message": "While ON, selecting text automatically highlights every match in your other tabs and windows. Built for side-by-side checking and reconciliation work."
+  },
+  "actionTitle": {
+    "message": "Cross-Window Highlight"
+  },
+  "cmdToggleDescription": {
+    "message": "Turn highlighting ON/OFF"
+  },
+  "toastOn": {
+    "message": "Highlight ON"
+  },
+  "toastOff": {
+    "message": "Highlight OFF"
+  },
+  "popupToggleLabel": {
+    "message": "Highlight"
+  },
+  "popupStatusOn": {
+    "message": "ON"
+  },
+  "popupStatusOff": {
+    "message": "OFF"
+  },
+  "popupHintOn": {
+    "message": "Select text and matches light up in your other tabs and windows."
+  },
+  "popupHintOff": {
+    "message": "Nothing happens while OFF."
+  },
+  "popupCurrentLabel": {
+    "message": "Currently highlighting"
+  },
+  "popupCurrentEmpty": {
+    "message": "(nothing)"
+  },
+  "popupShortcutLabel": {
+    "message": "Shortcut"
+  },
+  "popupShortcutUnset": {
+    "message": "Not set"
+  },
+  "popupShortcutHint": {
+    "message": "Toggle ON/OFF"
+  },
+  "popupShortcutOpen": {
+    "message": "Change shortcut"
+  },
+  "popupEscHint": {
+    "message": "Press Esc to clear highlights on the current page only."
+  },
+  "popupProTitle": {
+    "message": "Pro features"
+  },
+  "popupProComingSoon": {
+    "message": "Coming soon"
+  },
+  "popupProDesc": {
+    "message": "Custom highlight colors, excluded domains, multiple keywords at once, and more."
+  },
+  "popupVersion": {
+    "message": "Version $VERSION$",
+    "placeholders": {
+      "VERSION": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupProActive": {
+    "message": "Active"
+  },
+  "popupProLocked": {
+    "message": "Locked"
+  },
+  "popupLicenseLabel": {
+    "message": "License key"
+  },
+  "popupLicenseActivate": {
+    "message": "Activate"
+  },
+  "popupLicenseChecking": {
+    "message": "Checking…"
+  },
+  "popupLicenseBuy": {
+    "message": "Get Pro"
+  },
+  "popupLicenseActive": {
+    "message": "Pro active"
+  },
+  "popupLicenseRecheck": {
+    "message": "Re-check"
+  },
+  "popupLicenseDeactivate": {
+    "message": "Deactivate this device"
+  },
+  "popupLicenseOk": {
+    "message": "Activated. Pro features are unlocked."
+  },
+  "popupLicenseErrInvalid": {
+    "message": "This key is not valid. Please check it and try again."
+  },
+  "popupLicenseErrLimit": {
+    "message": "This key has reached its device limit. Deactivate it on another device first."
+  },
+  "popupLicenseErrNetwork": {
+    "message": "Could not reach the license server. Please try again later."
+  },
+  "popupLicenseErrConfig": {
+    "message": "License activation is not available yet."
+  },
+  "popupLicenseErrRevoked": {
+    "message": "This key has been revoked."
+  },
+  "popupLicenseErrExpired": {
+    "message": "This key has expired."
+  },
+  "popupLicenseOffline": {
+    "message": "Offline. Using the last verified result."
+  },
+  "popupSetMarkColor": {
+    "message": "Highlight color"
+  },
+  "popupSetInputColor": {
+    "message": "Input outline color"
+  },
+  "popupSetMinLen": {
+    "message": "Minimum length (1–10)"
+  },
+  "popupSetHitBadge": {
+    "message": "Show match count on the icon"
+  },
+  "popupSetMultiKeyword": {
+    "message": "Split by newline / comma and highlight several words at once"
+  },
+  "popupSetIframes": {
+    "message": "Also highlight inside iframes"
+  },
+  "popupSetExcluded": {
+    "message": "Excluded domains (one per line)"
+  },
+  "popupSetReset": {
+    "message": "Reset to defaults"
+  }
 }

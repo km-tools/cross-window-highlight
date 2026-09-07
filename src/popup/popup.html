@@ -39,16 +39,71 @@
     <p class="hint" data-i18n="popupEscHint"></p>
   </section>
 
-  <section class="card pro">
+  <section class="card pro" id="pro">
     <div class="pro-head">
       <h2 data-i18n="popupProTitle"></h2>
-      <span class="badge" data-i18n="popupProComingSoon"></span>
+      <span class="badge" id="pro-badge"></span>
     </div>
-    <p class="hint" data-i18n="popupProDesc"></p>
+
+    <!-- ライセンス -->
+    <div class="license" id="license-form">
+      <label class="field-label" for="license-key" data-i18n="popupLicenseLabel"></label>
+      <div class="license-row">
+        <input type="text" id="license-key" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX">
+        <button type="button" id="license-activate" class="btn" data-i18n="popupLicenseActivate"></button>
+      </div>
+      <p class="hint license-msg" id="license-msg"></p>
+      <a href="#" id="purchase" class="link" data-i18n="popupLicenseBuy" hidden></a>
+    </div>
+    <div class="license license-ok" id="license-info" hidden>
+      <p class="license-line">
+        <span data-i18n="popupLicenseActive"></span>
+        <span class="muted" id="license-tail"></span>
+      </p>
+      <div class="license-actions">
+        <a href="#" id="license-recheck" class="link" data-i18n="popupLicenseRecheck"></a>
+        <a href="#" id="license-deactivate" class="link danger" data-i18n="popupLicenseDeactivate"></a>
+      </div>
+      <p class="hint license-msg" id="license-msg2"></p>
+    </div>
+
+    <!-- 設定 -->
+    <fieldset class="settings" id="settings" disabled>
+      <div class="row">
+        <label for="s-markColor" data-i18n="popupSetMarkColor"></label>
+        <input type="color" id="s-markColor">
+      </div>
+      <div class="row">
+        <label for="s-inputColor" data-i18n="popupSetInputColor"></label>
+        <input type="color" id="s-inputColor">
+      </div>
+      <div class="row">
+        <label for="s-minLen" data-i18n="popupSetMinLen"></label>
+        <input type="number" id="s-minLen" min="1" max="10" step="1">
+      </div>
+      <div class="row check">
+        <input type="checkbox" id="s-hitBadge">
+        <label for="s-hitBadge" data-i18n="popupSetHitBadge"></label>
+      </div>
+      <div class="row check">
+        <input type="checkbox" id="s-multiKeyword">
+        <label for="s-multiKeyword" data-i18n="popupSetMultiKeyword"></label>
+      </div>
+      <div class="row check">
+        <input type="checkbox" id="s-iframes">
+        <label for="s-iframes" data-i18n="popupSetIframes"></label>
+      </div>
+      <div class="row col">
+        <label for="s-excludedDomains" data-i18n="popupSetExcluded"></label>
+        <textarea id="s-excludedDomains" rows="3" placeholder="example.com&#10;mail.google.com"></textarea>
+      </div>
+      <button type="button" id="s-reset" class="link-btn" data-i18n="popupSetReset"></button>
+    </fieldset>
   </section>
 
   <footer class="foot" id="version"></footer>
 
+  <script src="../settings.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

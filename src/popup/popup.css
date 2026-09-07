@@ -126,3 +126,56 @@ kbd {
 }
 
 .foot { text-align: center; color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+/* ---- Pro ---- */
+.pro.locked .settings { opacity: .45; }
+.badge.ok { background: #d5f2e3; color: #0f6b4c; }
+
+.field-label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+.license-row { display: flex; gap: 6px; }
+.license-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: #fff;
+}
+.license-row input:focus { outline: 2px solid var(--accent-deep); outline-offset: 1px; border-color: transparent; }
+.btn {
+  flex: none;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--text);
+  color: #fff;
+  font: 600 12px/1.4 inherit;
+  cursor: pointer;
+}
+.btn:disabled { opacity: .5; cursor: default; }
+.license-msg { min-height: 1em; margin-top: 6px; }
+.license-msg.err { color: #b42318; }
+.license-msg.ok { color: var(--on); }
+.license-ok { padding: 8px 10px; border-radius: 8px; background: #edf8f2; border: 1px solid #cfeadb; }
+.license-line { margin: 0; font-size: 13px; font-weight: 600; color: #0f6b4c; display: flex; gap: 8px; align-items: baseline; }
+.license-actions { display: flex; gap: 14px; margin-top: 4px; }
+.license-actions .link { margin-top: 0; }
+.link.danger { color: #b42318; }
+
+.settings { border: 0; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
+.settings .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+.settings .row.check { justify-content: flex-start; }
+.settings .row.col { flex-direction: column; align-items: stretch; gap: 4px; }
+.settings input[type="color"] { width: 40px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.settings input[type="number"] { width: 56px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+.settings textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  resize: vertical;
+}
+.link-btn { align-self: flex-start; background: none; border: 0; padding: 0; color: #2b6cb0; font: 12px/1.4 inherit; cursor: pointer; }
+.link-btn:hover { text-decoration: underline; }

@@ -86,5 +86,164 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+// ============================================================================
+//  Pro: ライセンスと設定
+//  - 設定の読み書きは settings.js（chrome.storage.sync "cwh_settings"）
+//  - ライセンスの検証は background.js に依頼する（ここから外部通信はしない）
+// ============================================================================
+
+const SETTING_IDS = ["markColor", "inputColor", "minLen", "hitBadge", "multiKeyword", "iframes", "excludedDomains"];
+let licenseInfo = { valid: false, configured: false };
+
+function licenseMessage(info) {
+  if (!info) return "";
+  if (info.valid) {
+    return info.error === "network" ? msg("popupLicenseOffline") : "";
+  }
+  switch (info.error) {
+    case "invalid": return msg("popupLicenseErrInvalid");
+    case "limit": return msg("popupLicenseErrLimit");
+    case "network": return msg("popupLicenseErrNetwork");
+    case "config": return msg("popupLicenseErrConfig");
+    default: break;
+  }
+  if (info.status === "revoked" || info.status === "disabled") return msg("popupLicenseErrRevoked");
+  if (info.expiresAt && Date.parse(info.expiresAt) < Date.now()) return msg("popupLicenseErrExpired");
+  return "";
+}
+
+function renderLicense(info, flashMsg) {
+  licenseInfo = info || { valid: false };
+  const valid = licenseInfo.valid === true;
+
+  $("pro").classList.toggle("locked", !valid);
+  const badge = $("pro-badge");
+  badge.textContent = msg(valid ? "popupProActive" : licenseInfo.configured ? "popupProLocked" : "popupProComingSoon");
+  badge.classList.toggle("ok", valid);
+
+  $("license-form").hidden = valid;
+  $("license-info").hidden = !valid;
+  $("settings").disabled = !valid;
+
+  const buy = $("purchase");
+  buy.hidden = !licenseInfo.purchaseUrl;
+  buy.href = licenseInfo.purchaseUrl || "#";
+
+  if (valid) $("license-tail").textContent = licenseInfo.keyTail ? `…${licenseInfo.keyTail}` : "";
+
+  const text = flashMsg ?? licenseMessage(licenseInfo);
+  for (const id of ["license-msg", "license-msg2"]) {
+    const el = $(id);
+    el.textContent = text;
+    el.classList.toggle("err", !!text && !(valid && text === msg("popupLicenseOk")));
+    el.classList.toggle("ok", !!text && valid && text === msg("popupLicenseOk"));
+  }
+}
+
+async function refreshLicense(revalidate = false) {
+  try {
+    const info = await chrome.runtime.sendMessage({ type: "LICENSE_INFO", revalidate });
+    renderLicense(info);
+  } catch (e) {
+    renderLicense({ valid: false, error: "network" });
+  }
+}
+
+$("license-activate").addEventListener("click", async () => {
+  const key = $("license-key").value.trim();
+  if (!key) return;
+  const btn = $("license-activate");
+  btn.disabled = true;
+  $("license-msg").textContent = msg("popupLicenseChecking");
+  $("license-msg").className = "hint license-msg";
+  try {
+    const info = await chrome.runtime.sendMessage({ type: "LICENSE_ACTIVATE", key });
+    renderLicense(info, info?.valid ? msg("popupLicenseOk") : undefined);
+    if (info?.valid) {
+      $("license-key").value = "";
+      await loadSettingsIntoForm();
+    }
+  } catch (e) {
+    renderLicense({ ...licenseInfo, valid: false, error: "network" });
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$("license-key").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") $("license-activate").click();
+});
+
+$("license-recheck").addEventListener("click", (e) => {
+  e.preventDefault();
+  $("license-msg2").textContent = msg("popupLicenseChecking");
+  refreshLicense(true);
+});
+
+$("license-deactivate").addEventListener("click", async (e) => {
+  e.preventDefault();
+  try {
+    const info = await chrome.runtime.sendMessage({ type: "LICENSE_DEACTIVATE" });
+    renderLicense(info);
+  } catch (err) {
+    refreshLicense();
+  }
+});
+
+$("purchase").addEventListener("click", (e) => {
+  if (!licenseInfo.purchaseUrl) return;
+  e.preventDefault();
+  chrome.tabs.create({ url: licenseInfo.purchaseUrl });
+});
+
+// ---- 設定フォーム ----
+function formToSettings() {
+  return {
+    markColor: $("s-markColor").value,
+    inputColor: $("s-inputColor").value,
+    minLen: Number($("s-minLen").value),
+    hitBadge: $("s-hitBadge").checked,
+    multiKeyword: $("s-multiKeyword").checked,
+    iframes: $("s-iframes").checked,
+    excludedDomains: $("s-excludedDomains").value.split(/\r?\n/),
+  };
+}
+
+function settingsToForm(s) {
+  $("s-markColor").value = s.markColor;
+  $("s-inputColor").value = s.inputColor;
+  $("s-minLen").value = s.minLen;
+  $("s-hitBadge").checked = s.hitBadge;
+  $("s-multiKeyword").checked = s.multiKeyword;
+  $("s-iframes").checked = s.iframes;
+  $("s-excludedDomains").value = s.excludedDomains.join("\n");
+}
+
+async function loadSettingsIntoForm() {
+  settingsToForm(await cwhLoadSettings());
+}
+
+let saveTimer = null;
+function scheduleSave() {
+  if (!licenseInfo.valid) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const clean = await cwhSaveSettings(formToSettings());
+    settingsToForm(clean);
+  }, 250);
+}
+
+for (const id of SETTING_IDS) {
+  const el = $(`s-${id}`);
+  el.addEventListener("change", scheduleSave);
+}
+
+$("s-reset").addEventListener("click", async () => {
+  if (!licenseInfo.valid) return;
+  settingsToForm(await cwhSaveSettings({}));
+});
+
 refreshState();
 renderShortcut();
+loadSettingsIntoForm();
+refreshLicense();
