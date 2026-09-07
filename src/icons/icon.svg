@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- 背面ウィンドウ -->
+  <rect x="14" y="14" width="76" height="60" rx="10" fill="#dfe3ea" stroke="#5b6472" stroke-width="10"/>
+  <!-- 前面ウィンドウ -->
+  <rect x="38" y="46" width="76" height="60" rx="10" fill="#ffffff" stroke="#2f3745" stroke-width="10"/>
+  <!-- ハイライト帯（背面） -->
+  <rect x="30" y="38" width="44" height="16" rx="4" fill="#ffd54a"/>
+  <!-- ハイライト帯（前面） -->
+  <rect x="54" y="70" width="44" height="16" rx="4" fill="#ffd54a"/>
+</svg>
