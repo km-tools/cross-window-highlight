@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="head">
+    <img class="logo" src="../icons/icon32.png" alt="">
+    <h1 data-i18n="extName"></h1>
+  </header>
+
+  <section class="card toggle-card">
+    <div class="toggle-row">
+      <div class="toggle-text">
+        <span class="toggle-label" data-i18n="popupToggleLabel"></span>
+        <span class="toggle-status" id="status"></span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="toggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <p class="hint" id="hint"></p>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="popupCurrentLabel"></h2>
+    <p class="current" id="current"></p>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="popupShortcutLabel"></h2>
+    <div class="shortcut-row">
+      <kbd id="shortcut"></kbd>
+      <span class="muted" data-i18n="popupShortcutHint"></span>
+    </div>
+    <a href="#" id="open-shortcuts" class="link" data-i18n="popupShortcutOpen"></a>
+    <p class="hint" data-i18n="popupEscHint"></p>
+  </section>
+
+  <section class="card pro">
+    <div class="pro-head">
+      <h2 data-i18n="popupProTitle"></h2>
+      <span class="badge" data-i18n="popupProComingSoon"></span>
+    </div>
+    <p class="hint" data-i18n="popupProDesc"></p>
+  </section>
+
+  <footer class="foot" id="version"></footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

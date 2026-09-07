@@ -1,8 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "クロスウィンドウ・ハイライト",
-  "version": "2.1.1",
-  "description": "ONの間、文字を選択すると他のタブ／ウィンドウの一致箇所を自動ハイライトします。競合防止・再描画復元に対応しています。",
+  "name": "__MSG_extName__",
+  "version": "3.0.0",
+  "description": "__MSG_extDescription__",
+  "default_locale": "ja",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "permissions": [
     "tabs",
     "scripting",
@@ -15,7 +22,14 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "クロスウィンドウ・ハイライト（クリックでON/OFF）"
+    "default_title": "__MSG_actionTitle__",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "content_scripts": [
     {
@@ -35,7 +49,7 @@
         "default": "Ctrl+Shift+H",
         "mac": "Command+Shift+H"
       },
-      "description": "ハイライト機能のON/OFF"
+      "description": "__MSG_cmdToggleDescription__"
     }
   }
 }

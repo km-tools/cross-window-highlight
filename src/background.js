@@ -1,5 +1,5 @@
 // ============================================================================
-//  background.js  v2.1（Service Worker）
+//  background.js  v3.0.0（Service Worker）
 //
 //  主な改善点
 //   - 選択通知に revision（世代番号）を付け、古い HIGHLIGHT / CLEAR を無効化
@@ -7,6 +7,7 @@
 //   - 一時的な空選択は少し待ってから CLEAR（誤解除を軽減）
 //   - 現在の検索語を storage.session に保持し、再読込したタブへ復元
 //   - content.js は、メッセージ送信失敗時だけ再注入
+//   - v3.0.0: ポップアップ追加（ON/OFF はポップアップ内スイッチ）、休止タブを除外
 // ============================================================================
 
 const LOG = (...a) => console.log("[CWH]", ...a);
@@ -107,7 +108,7 @@ async function broadcastHighlight(text, sourceTabId, revision) {
   let hit = 0;
 
   const jobs = tabs.map(async (tab) => {
-    if (!tab.id || isBlocked(tab.url) || tab.id === sourceTabId) return;
+    if (!tab.id || tab.discarded || isBlocked(tab.url) || tab.id === sourceTabId) return;
 
     const response = await sendWithInjection(tab.id, {
       type: "HIGHLIGHT",
@@ -129,7 +130,7 @@ async function broadcastHighlight(text, sourceTabId, revision) {
 async function broadcastClear(revision) {
   const tabs = await chrome.tabs.query({});
   const jobs = tabs.map(async (tab) => {
-    if (!tab.id || isBlocked(tab.url)) return;
+    if (!tab.id || tab.discarded || isBlocked(tab.url)) return;
     await sendWithInjection(tab.id, { type: "CLEAR", revision });
   });
   await Promise.allSettled(jobs);
@@ -203,7 +204,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   await stateReady;
   const on = await getEnabled();
   updateBadge(on);
-  LOG("インストール完了 v2.1 / 現在:", on ? "ON" : "OFF");
+  LOG("インストール完了 v3.0.0 / 現在:", on ? "ON" : "OFF");
 });
 
 chrome.runtime.onStartup.addListener(async () => {
@@ -220,11 +221,6 @@ chrome.commands.onCommand.addListener(async (command) => {
   await setEnabled(!(await getEnabled()));
 });
 
-// ---- ツールバーアイコンのクリックでもトグル ----
-chrome.action.onClicked.addListener(async () => {
-  await setEnabled(!(await getEnabled()));
-});
-
 // ---- content.js との通信 ----
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === "SELECTION_CHANGED") {
@@ -232,6 +228,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       WARN("選択通知の処理に失敗", e);
     });
     return false;
+  }
+
+  // ポップアップのスイッチから ON/OFF を切り替える
+  if (msg?.type === "SET_ENABLED") {
+    (async () => {
+      await stateReady;
+      await setEnabled(msg.enabled !== false);
+      sendResponse({ ok: true });
+    })().catch((e) => {
+      WARN("ON/OFF の切り替えに失敗", e);
+      sendResponse({ ok: false });
+    });
+    return true;
   }
 
   if (msg?.type === "GET_STATE") {
