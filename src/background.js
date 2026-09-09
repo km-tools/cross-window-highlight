@@ -10,6 +10,9 @@
 //   - v3.0.0: ポップアップ追加（ON/OFF はポップアップ内スイッチ）、休止タブを除外
 //   - v3.0.0 Pro: 設定（settings.js）とライセンス（license.js）。除外ドメイン・
 //     ヒット件数バッジ・iframe 注入は、ライセンス有効時の設定値でのみ切り替わる
+//   - v3.0.0 補足: ヒットを「完全一致 / 正規化一致」で分けて集計。各タブを
+//     「走査できた / 判定不能（注入不可・タイムアウト・除外など）」で区別し、
+//     0件警告は走査できたタブで一致がなかったときだけ出す
 // ============================================================================
 
 importScripts("settings.js", "license.js");
@@ -43,26 +46,75 @@ let currentState = {
   text: "",
   sourceTabId: null,
   revision: 0,
+  hits: null, // { exact, norm, total, scanned, unknown: [{ title, reason }] }
 };
 
-function isBlocked(url) {
-  if (!url) return true;
+const RESPONSE_TIMEOUT = 4000;
+const TIMEOUT = Symbol("timeout");
+
+// null = 対象、"blocked" = 拡張が動作しないページ、"excluded" = 除外ドメイン（Pro）
+function blockReason(url) {
+  if (!url) return "blocked";
   if (/^(edge|chrome|about|devtools|view-source|extension|chrome-extension):/i.test(url)
     || /microsoftedge\.microsoft\.com|chromewebstore\.google\.com|chrome\.google\.com\/webstore/i.test(url)) {
-    return true;
+    return "blocked";
   }
-  // Pro: 除外ドメイン
   try {
-    if (cwhIsExcludedHost(new URL(url).hostname, proSettings.excludedDomains)) return true;
+    if (cwhIsExcludedHost(new URL(url).hostname, proSettings.excludedDomains)) return "excluded";
   } catch (e) { /* URL でなければ通す */ }
-  return false;
+  return null;
+}
+
+function isBlocked(url) {
+  return blockReason(url) !== null;
+}
+
+// 本文を持たないタブ（空タブ・新しいタブ・この拡張自身のページ）。
+// 走査対象でも「判定不能」でもなく、集計から外す。
+function isNoContentTab(url) {
+  if (!url) return true;
+  if (url === "about:blank" || /^chrome:\/\/(newtab|new-tab-page)/i.test(url)) return true;
+  return url.startsWith(`chrome-extension://${chrome.runtime.id}/`);
+}
+
+// 判定不能タブ一覧に出すタイトル。<title> が無いと Chrome は URL をタイトルにするので、
+// URL と同じ内容のときは空にして「（無題）」扱いにする（URL は出さない）。
+function safeTitle(tab) {
+  const t = (tab.title || "").trim();
+  if (!t) return "";
+  const u = (tab.url || "").replace(/^[a-z-]+:\/\//i, "");
+  if (u.startsWith(t) || (tab.url || "").startsWith(t)) return "";
+  return t;
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([promise, new Promise((r) => setTimeout(() => r(TIMEOUT), ms))]);
 }
 
 // Pro: ヒット件数バッジ（ON 中だけ。OFF 時は "OFF" のまま）
-function updateHitBadge(hit) {
+//   走査できたタブがない → "?"（灰）、走査できて 0 件 → "0"（赤）、
+//   それ以外 → 件数（正規化一致があれば「完全+表記違い」）
+function updateHitBadge(hits) {
   if (!proSettings.hitBadge) return;
-  chrome.action.setBadgeText({ text: hit > 0 ? String(hit > 999 ? "999+" : hit) : "ON" });
-  chrome.action.setBadgeBackgroundColor({ color: hit > 0 ? "#d98c00" : "#1d9e75" });
+  if (!hits) {
+    updateBadge(true);
+    return;
+  }
+  let text;
+  let color;
+  if (hits.scanned === 0) {
+    text = "?";
+    color = "#888780";
+  } else if (hits.total === 0) {
+    text = "0";
+    color = "#c62828";
+  } else {
+    text = hits.norm > 0 ? `${hits.exact}+${hits.norm}` : String(hits.total);
+    if (text.length > 4) text = hits.total > 9999 ? "9999" : String(hits.total);
+    color = "#d98c00";
+  }
+  chrome.action.setBadgeText({ text });
+  chrome.action.setBadgeBackgroundColor({ color });
 }
 
 function updateBadge(on) {
@@ -91,6 +143,7 @@ async function loadSessionState() {
         text: typeof state.text === "string" ? state.text : "",
         sourceTabId: Number.isInteger(state.sourceTabId) ? state.sourceTabId : null,
         revision: Number.isFinite(state.revision) ? state.revision : 0,
+        hits: state.hits && typeof state.hits === "object" ? state.hits : null,
       };
     }
   } catch (e) {
@@ -140,26 +193,41 @@ async function sendWithInjection(tabId, msg) {
 
 async function broadcastHighlight(text, sourceTabId, revision) {
   const tabs = await chrome.tabs.query({});
-  let hit = 0;
+  const hits = { exact: 0, norm: 0, total: 0, scanned: 0, unknown: [] };
+  const unknown = (tab, reason) => hits.unknown.push({ title: safeTitle(tab), reason });
 
   const jobs = tabs.map(async (tab) => {
-    if (!tab.id || tab.discarded || isBlocked(tab.url) || tab.id === sourceTabId) return;
+    if (!tab.id || tab.id === sourceTabId || isNoContentTab(tab.url)) return;
+    if (tab.discarded) return unknown(tab, "discarded");
+    const blocked = blockReason(tab.url);
+    if (blocked) return unknown(tab, blocked);
 
-    const response = await sendWithInjection(tab.id, {
-      type: "HIGHLIGHT",
-      text,
-      revision,
-    });
+    const response = await withTimeout(
+      sendWithInjection(tab.id, { type: "HIGHLIGHT", text, revision }),
+      RESPONSE_TIMEOUT,
+    );
 
-    if (response?.count) hit += response.count;
+    if (response === TIMEOUT) return unknown(tab, "timeout");
+    if (response === null || typeof response !== "object") return unknown(tab, "injectFailed");
+    if (response.ignored) return; // 古い revision。次の選択で上書きされる
+    if (response.excluded) return unknown(tab, "excluded");
+    if (response.deferred) return unknown(tab, "deferred");
+
+    hits.scanned++;
+    hits.total += response.count || 0;
+    hits.exact += response.exact || 0;
+    hits.norm += response.norm || 0;
   });
 
   await Promise.allSettled(jobs);
 
-  // 処理中に新しい選択が来ていなければログを出す。
+  // 処理中に新しい選択が来ていなければ結果を確定する。
   if (currentState.revision === revision) {
-    LOG("選択:", JSON.stringify(text), "→ ヒット", hit, "revision", revision);
-    updateHitBadge(hit);
+    currentState.hits = hits;
+    await saveSessionState();
+    LOG("選択:", JSON.stringify(text), "→ 完全", hits.exact, "表記違い", hits.norm,
+      "走査", hits.scanned, "判定不能", hits.unknown.length, "revision", revision);
+    updateHitBadge(hits);
   }
 }
 
@@ -181,6 +249,7 @@ async function clearCurrent(reason) {
     text: "",
     sourceTabId: null,
     revision,
+    hits: null,
   };
   await saveSessionState();
   await broadcastClear(revision);
@@ -215,7 +284,7 @@ async function handleSelectionChanged(msg, sender) {
     clearTimer = null;
 
     const revision = nextRevision();
-    currentState = { text, sourceTabId, revision };
+    currentState = { text, sourceTabId, revision, hits: null };
     await saveSessionState();
     await broadcastHighlight(text, sourceTabId, revision);
     return;
@@ -333,6 +402,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sendResponse({
         enabled,
         text: enabled && !isSource ? currentState.text : "",
+        hits: enabled && !isSource ? currentState.hits : null,
         revision: currentState.revision,
       });
     })().catch((e) => {
