@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>注文入力 | 受注管理</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f4f6f8; color: #222; font: 14px/1.55 "Segoe UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; }
+  .top { background: #1f2d3d; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .top .brand { font-weight: 700; letter-spacing: .02em; }
+  .top .user { font-size: 12px; color: #bcd; }
+  .wrap { padding: 18px 20px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #667; font-size: 12px; margin-bottom: 14px; }
+  .panel { background: #fff; border: 1px solid #dfe3e8; border-radius: 8px; padding: 16px 18px; margin-bottom: 14px; }
+  .panel h2 { font-size: 13px; color: #556; margin: 0 0 10px; letter-spacing: .04em; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .f { display: flex; flex-direction: column; gap: 4px; }
+  .f.w { grid-column: 1 / -1; }
+  label { font-size: 12px; color: #556; }
+  input, select { font: inherit; padding: 7px 9px; border: 1px solid #c8cdd3; border-radius: 6px; background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #eceff2; }
+  th { color: #556; font-weight: 600; background: #f8f9fb; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .btns { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid #c8cdd3; background: #fff; font: inherit; }
+  .btn.p { background: #2b6cb0; color: #fff; border-color: #2b6cb0; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="top"><div class="brand">受注管理システム</div><div class="user">担当: 中村 ｜ 店舗: サンプル商店</div></div>
+<div class="wrap">
+  <h1>注文入力</h1>
+  <div class="sub">注文番号 ORD-20260910-0042 ｜ 受付: 電話 ｜ 高橋 美咲 様</div>
+
+  <div class="panel">
+    <h2>お客様情報</h2>
+    <div class="grid">
+      <div class="f"><label>氏名</label><input value="高橋 美咲"></div>
+      <div class="f"><label>電話番号</label><input value="09012345678"></div>
+      <div class="f w"><label>住所</label><input value="東京都架空区みなと町 2-14-7 サンプルハイツ 305"></div>
+      <div class="f"><label>お支払い</label><select><option>代金引換</option></select></div>
+      <div class="f"><label>配送希望日</label><input value="2026-09-14"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>注文明細</h2>
+    <table>
+      <thead><tr><th>商品コード</th><th>商品名</th><th>数量</th><th>単価</th><th>金額</th></tr></thead>
+      <tbody>
+        <tr><td>SKU-2026-0815</td><td>ブレンドコーヒー豆 200g</td><td class="num">2</td><td class="num">1,480</td><td class="num">2,960</td></tr>
+        <tr><td colspan="4" style="text-align:right;color:#556">小計</td><td class="num">2,960</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>備考</h2>
+    <div class="grid"><div class="f w"><input value="ギフト包装希望、のし不要"></div></div>
+  </div>
+
+  <div class="btns"><button class="btn">下書き保存</button><button class="btn p">注文を確定</button></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>顧客一覧 | 受注管理</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f4f6f8; color: #222; font: 13px/1.5 "Segoe UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; }
+  .top { background: #1f2d3d; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .top .brand { font-weight: 700; }
+  .top .user { font-size: 12px; color: #bcd; }
+  .wrap { padding: 14px 20px; }
+  h1 { font-size: 18px; margin: 0 0 8px; }
+  .bar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .bar input { font: inherit; padding: 6px 9px; border: 1px solid #c8cdd3; border-radius: 6px; width: 220px; }
+  .bar .cnt { color: #667; font-size: 12px; margin-left: auto; }
+  .tbl { background: #fff; border: 1px solid #dfe3e8; border-radius: 8px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #eef1f4; white-space: nowrap; }
+  th { color: #556; font-weight: 600; background: #f8f9fb; position: sticky; top: 0; }
+  td.id { color: #667; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="top"><div class="brand">受注管理システム</div><div class="user">担当: 中村 ｜ 店舗: サンプル商店</div></div>
+<div class="wrap">
+  <h1>顧客一覧</h1>
+  <div class="bar"><input placeholder="氏名・電話・メールで検索"><span class="cnt" id="cnt"></span></div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>顧客ID</th><th>氏名</th><th>電話</th><th>住所</th><th>最終注文日</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+  // 架空データを決定的に生成する（rows= で行数を変えられる。既定 200）
+  const rows = Math.max(1, Number(new URLSearchParams(location.search).get("rows")) || 200);
+  const sei = ["佐藤", "鈴木", "高橋", "田中", "伊藤", "渡辺", "山本", "中村", "小林", "加藤", "吉田", "山田", "松本", "井上", "木村", "林", "斎藤", "清水", "山口", "森"];
+  const mei = ["太郎", "花子", "健太", "美咲", "翔", "結衣", "大輔", "さくら", "拓也", "陽菜", "直樹", "葵", "誠", "凛", "隆", "美穂", "浩二", "彩", "亮", "千尋"];
+  const machi = ["みなと町", "さくら台", "ひばりが丘", "中央町", "西新町", "本町", "緑が丘", "旭町"];
+  let seed = 20260910;
+  const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+  const pad = (n, w) => String(n).padStart(w, "0");
+  const tb = document.getElementById("rows");
+  const frag = document.createDocumentFragment();
+  for (let i = 1; i <= rows; i++) {
+    const tr = document.createElement("tr");
+    let name = sei[rnd(sei.length)] + " " + mei[rnd(mei.length)];
+    let phone = `0${rnd(2) ? 90 : 80}-${pad(rnd(10000), 4)}-${pad(rnd(10000), 4)}`;
+    const addr = `東京都架空区${machi[rnd(machi.length)]} ${1 + rnd(9)}-${1 + rnd(30)}-${1 + rnd(20)}`;
+    const date = `2026-0${1 + rnd(9)}-${pad(1 + rnd(28), 2)}`;
+    // 同じ人が2回登録されている想定: 4行目はハイフンあり、9行目はハイフンなし
+    if (i === 4) { name = "高橋 美咲"; phone = "090-1234-5678"; }
+    if (i === 9) { name = "高橋 美咲"; phone = "09012345678"; }
+    tr.innerHTML = `<td class="id">C-${pad(i, 5)}</td><td>${name}</td><td>${phone}</td><td>${addr}</td><td>${date}</td>`;
+    frag.appendChild(tr);
+  }
+  tb.appendChild(frag);
+  document.getElementById("cnt").textContent = `${rows.toLocaleString()} 件`;
+</script>
+</body>
+</html>

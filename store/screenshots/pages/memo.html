@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>#受注メモ</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fff; color: #1d1c1d; font: 15px/1.55 "Segoe UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; }
+  .app { display: grid; grid-template-columns: 200px 1fr; height: 100vh; }
+  .side { background: #3f0e40; color: #e8d8e8; padding: 14px 0; }
+  .side .ws { font-weight: 700; color: #fff; padding: 4px 16px 14px; font-size: 16px; border-bottom: 1px solid #5a2a5b; margin-bottom: 10px; }
+  .side .sec { padding: 8px 16px 4px; font-size: 12px; color: #c9b4ca; }
+  .side .ch { padding: 4px 16px; font-size: 14px; }
+  .side .ch.on { background: #1164a3; color: #fff; border-radius: 4px; margin: 0 8px; padding: 4px 8px; }
+  .main { display: flex; flex-direction: column; }
+  .head { padding: 12px 20px; border-bottom: 1px solid #ddd; font-weight: 700; font-size: 17px; }
+  .head span { font-weight: 400; color: #616061; font-size: 13px; margin-left: 10px; }
+  .msgs { padding: 12px 20px; overflow: hidden; flex: 1; }
+  .msg { display: grid; grid-template-columns: 38px 1fr; gap: 10px; margin-bottom: 18px; }
+  .av { width: 38px; height: 38px; border-radius: 6px; background: #d9c8e0; color: #3f0e40; display: grid; place-items: center; font-weight: 700; }
+  .av.b { background: #c6dcef; color: #0b3d5c; }
+  .av.c { background: #d3e8d0; color: #1e4d1a; }
+  .who { font-weight: 700; }
+  .who time { font-weight: 400; color: #616061; font-size: 12px; margin-left: 8px; }
+  .body { margin-top: 2px; white-space: pre-line; }
+  .body b { font-weight: 600; }
+  .card { border: 1px solid #ddd; border-left: 4px solid #2bac76; border-radius: 6px; padding: 10px 12px; margin-top: 6px; background: #fafafa; }
+  .card .row { display: flex; gap: 8px; }
+  .card .k { color: #616061; width: 84px; flex: none; }
+  .input { margin: 0 20px 16px; border: 1px solid #bbb; border-radius: 8px; padding: 10px 12px; color: #888; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="ws">サンプル商店</div>
+    <div class="sec">チャンネル</div>
+    <div class="ch"># 全体</div>
+    <div class="ch on"># 受注メモ</div>
+    <div class="ch"># 出荷連絡</div>
+    <div class="ch"># 経理</div>
+    <div class="sec">ダイレクトメッセージ</div>
+    <div class="ch">佐々木</div>
+    <div class="ch">中村</div>
+  </aside>
+  <section class="main">
+    <div class="head"># 受注メモ <span>電話・LINE で受けた注文をここに貼る</span></div>
+    <div class="msgs">
+      <div class="msg">
+        <div class="av">佐</div>
+        <div>
+          <div class="who">佐々木<time>10:42</time></div>
+          <div class="body">電話注文きました。入力お願いします 🙏</div>
+          <div class="card">
+            <div class="row"><span class="k">氏名</span><span id="name">高橋 美咲</span></div>
+            <div class="row"><span class="k">電話</span><span id="phone">090-1234-5678</span></div>
+            <div class="row"><span class="k">住所</span><span>東京都架空区みなと町 2-14-7 サンプルハイツ 305</span></div>
+            <div class="row"><span class="k">商品コード</span><span id="sku">SKU-2026-0851</span></div>
+            <div class="row"><span class="k">数量</span><span>2</span></div>
+            <div class="row"><span class="k">備考</span><span>ギフト包装希望、のし不要</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="msg">
+        <div class="av b">中</div>
+        <div>
+          <div class="who">中村<time>10:45</time></div>
+          <div class="body">了解です。商品コードは念のため在庫表でも確認します。</div>
+        </div>
+      </div>
+      <div class="msg">
+        <div class="av c">田</div>
+        <div>
+          <div class="who">田島<time>11:02</time></div>
+          <div class="body">昨日の分、<b>SKU-2026-0330</b> は入荷待ちに変更になりました。</div>
+        </div>
+      </div>
+    </div>
+    <div class="input"># 受注メモ にメッセージを送信</div>
+  </section>
+</div>
+</body>
+</html>
