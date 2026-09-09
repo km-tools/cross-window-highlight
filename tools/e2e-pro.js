@@ -101,22 +101,25 @@ const htmlA = `<html lang="ja"><body style="font:16px sans-serif;padding:20px">
 <p id="multi">INV-2026-0042, サンプル</p>
 <p id="one">票</p>
 </body></html>`;
-const htmlB = `<html lang="ja"><body style="font:16px sans-serif;padding:20px">
+const htmlB = `<html lang="ja"><head><title>伝票 No.42</title></head><body style="font:16px sans-serif;padding:20px">
 <h1>伝票</h1>
 <p>伝票 No. inv-2026-0042 を確認</p>
 <p>株式会社サンプル の伝票</p>
+<p id="exact">完全一致 INV-2026-0042</p>
 <input id="inp" value="INV-2026-0042">
 <iframe id="fr" src="/c" style="width:400px;height:80px"></iframe>
 </body></html>`;
 const htmlC = `<html lang="ja"><body style="font:14px sans-serif">iframe の中: INV-2026-0042</body></html>`;
+const htmlD = `<html lang="ja"><body style="font:14px sans-serif"><h1>何も一致しないページ</h1><p>ここには請求番号がありません。</p></body></html>`;
 
 function servePages() {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.end(req.url.startsWith("/b") ? htmlB : req.url.startsWith("/c") ? htmlC : htmlA);
+      res.end(req.url.startsWith("/b") ? htmlB : req.url.startsWith("/c") ? htmlC : req.url.startsWith("/d") ? htmlD : htmlA);
     });
-    server.listen(0, "127.0.0.1", () => resolve(server));
+    // A は localhost、B は 127.0.0.1 で配信して、除外ドメインの判定を片側だけに効かせられるようにする
+    server.listen(0, () => resolve(server));
   });
 }
 
@@ -126,6 +129,7 @@ function servePages() {
   const mockBase = `http://127.0.0.1:${mock.address().port}`;
   const pages = await servePages();
   const base = `http://127.0.0.1:${pages.address().port}`;
+  const baseLocal = `http://localhost:${pages.address().port}`;
 
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "cwh-e2e-pro-"));
   const browser = await puppeteer.launch({
@@ -147,7 +151,7 @@ function servePages() {
       await chrome.storage.local.set({ cwh_dev: { apiBase, organizationId } });
     }, mockBase, ORG);
 
-    const a = await browser.newPage(); await a.goto(`${base}/a`);
+    const a = await browser.newPage(); await a.goto(`${baseLocal}/a`);
     const b = await browser.newPage(); await b.goto(`${base}/b`);
     const popup = await browser.newPage();
     await popup.setViewport({ width: 340, height: 900 });
@@ -171,7 +175,7 @@ function servePages() {
       await sleep(700);
     };
     const marksIn = (page) => page.evaluate(() => [...document.querySelectorAll("mark.cwh-mark")].map((m) => m.className + ":" + m.textContent));
-    const markBg = (page) => page.evaluate(() => { const m = document.querySelector("mark.cwh-mark"); return m ? getComputedStyle(m).backgroundColor : null; });
+    const markBg = (page) => page.evaluate(() => { const m = document.querySelector("mark.cwh-mark:not(.cwh-norm)"); return m ? getComputedStyle(m).backgroundColor : null; });
     const setSettings = async (obj) => { await sw.evaluate(async (o) => { await cwhSaveSettings(o); }, obj); await sleep(500); };
     const license = () => sw.evaluate(async () => (await chrome.storage.local.get("cwh_license")).cwh_license || null);
     const badge = () => sw.evaluate(() => chrome.action.getBadgeText({}));
@@ -181,8 +185,23 @@ function servePages() {
     await setSettings({ markColor: "#ff0000", minLen: 1, multiKeyword: true, hitBadge: true, iframes: true, excludedDomains: ["127.0.0.1"] });
     await selectIn(a, "src", "INV-2026-0042");
     let marks = await marksIn(b);
-    check("無効時: 除外ドメイン設定が効かない（ハイライトされる）", marks.length === 1, JSON.stringify(marks));
+    check("無効時: 除外ドメイン設定が効かない（ハイライトされる）", marks.length === 2, JSON.stringify(marks));
     check("無効時: 色設定が効かない（デフォルト色）", (await markBg(b)) === "rgb(255, 229, 138)", await markBg(b));
+
+    // ---- 完全一致 / 正規化一致（無料版でも色分けされる）----
+    check("完全一致の mark には cwh-norm が付かない", marks.includes("cwh-mark:INV-2026-0042"), JSON.stringify(marks));
+    check("正規化一致の mark に cwh-norm が付く", marks.includes("cwh-mark cwh-norm:inv-2026-0042"), JSON.stringify(marks));
+    const normTitle = await b.evaluate(() => document.querySelector("mark.cwh-norm")?.title || "");
+    check("正規化一致の mark に title で説明が付く", normTitle.includes("表記の違い"), normTitle);
+    const normBg = await b.evaluate(() => getComputedStyle(document.querySelector("mark.cwh-norm")).backgroundColor);
+    check("正規化一致は別色（デフォルト #ffd8a8）", normBg === "rgb(255, 216, 168)", normBg);
+    const inpNorm = await b.evaluate(() => document.getElementById("inp").classList.contains("cwh-input-norm"));
+    check("input の完全一致には破線が付かない", inpNorm === false);
+    await popup.bringToFront(); await sleep(300);
+    const hitsText = await popup.$eval("#hits", (el) => el.textContent);
+    check("ポップアップに内訳（完全 2 / 表記違い 1）", hitsText.includes("完全 2") && hitsText.includes("表記違い 1"), hitsText);
+    check("一致ありのときは警告を出さない", await popup.$eval("#hits-warn", (el) => el.hidden) === true);
+    await popup.screenshot({ path: path.join(outDir, "popup-hits-breakdown.png") });
     check("無効時: バッジは ON のまま", (await badge()) === "ON", await badge());
     const frMarks0 = await b.evaluate(() => document.getElementById("fr").contentDocument.querySelectorAll("mark.cwh-mark").length);
     check("無効時: iframe 内はハイライトしない", frMarks0 === 0, "frame marks=" + frMarks0);
@@ -250,7 +269,7 @@ function servePages() {
     await setSettings({ hitBadge: true });
     await selectIn(a, "src", "INV-2026-0042");
     let bt = await badge();
-    check("Pro: バッジにヒット件数", /^\d+$/.test(bt) && Number(bt) >= 2, bt);
+    check("Pro: バッジにヒット件数（完全+表記違い）", bt === "2+1", bt);
     await clearSel(a);
     bt = await badge();
     check("Pro: 解除後はバッジが ON に戻る", bt === "ON", bt);
@@ -265,7 +284,7 @@ function servePages() {
     await clearSel(a);
     await selectIn(a, "src", "INV-2026-0042");
     marks = await marksIn(b);
-    check("Pro: 複数語 ON でも1語なら従来どおり", marks.length === 1 && marks[0] === "cwh-mark:inv-2026-0042", JSON.stringify(marks));
+    check("Pro: 複数語 ON でも1語なら従来どおり", marks.length === 2 && marks.includes("cwh-mark cwh-norm:inv-2026-0042") && marks.includes("cwh-mark:INV-2026-0042"), JSON.stringify(marks));
     await clearSel(a);
     await setSettings({});
 
@@ -275,6 +294,64 @@ function servePages() {
     const frMarks = await b.evaluate(() => document.getElementById("fr").contentDocument.querySelectorAll("mark.cwh-mark").length);
     check("Pro: iframe 内もハイライトされる", frMarks === 1, "frame marks=" + frMarks);
     await clearSel(a);
+    await setSettings({});
+
+    // ---- Pro: 厳密比較モード ----
+    await setSettings({ strictMatch: true, hitBadge: true });
+    await selectIn(a, "src", "INV-2026-0042");
+    marks = await marksIn(b);
+    check("Pro: 厳密比較では完全一致だけ", marks.length === 1 && marks[0] === "cwh-mark:INV-2026-0042", JSON.stringify(marks));
+    bt = await badge();
+    check("Pro: 厳密比較のバッジは完全一致の件数のみ", bt === "2", bt);
+    await clearSel(a);
+    await setSettings({ strictMatch: true, multiKeyword: true });
+    await selectIn(a, "multi", "INV-2026-0042, サンプル");
+    marks = await marksIn(b);
+    check("Pro: 厳密比較 + 複数語でも完全一致だけ", marks.includes("cwh-mark:INV-2026-0042") && marks.includes("cwh-mark cwh-mark-1:サンプル") && !marks.some((m) => m.includes("cwh-norm")), JSON.stringify(marks));
+    await clearSel(a);
+    await setSettings({});
+
+    // ---- Pro: 表記違い一致の色 ----
+    await setSettings({ normColor: "#00ff00" });
+    await selectIn(a, "src", "INV-2026-0042");
+    const normBg2 = await b.evaluate(() => getComputedStyle(document.querySelector("mark.cwh-norm")).backgroundColor);
+    check("Pro: 表記違い一致の色を変えられる", normBg2 === "rgb(0, 255, 0)", normBg2);
+    const exactBg2 = await b.evaluate(() => getComputedStyle(document.querySelector("mark.cwh-mark:not(.cwh-norm)")).backgroundColor);
+    check("Pro: 完全一致の色は変わらない", exactBg2 === "rgb(255, 229, 138)", exactBg2);
+    await clearSel(a);
+    await setSettings({});
+
+    // ---- 判定不能のみ（除外ドメイン + chrome:// ページ）----
+    const v = await browser.newPage(); await v.goto("chrome://version/");
+    await setSettings({ hitBadge: true, excludedDomains: ["127.0.0.1"] });
+    await selectIn(a, "src", "INV-2026-0042");
+    bt = await badge();
+    check("判定不能のみ: バッジは灰色の ?", bt === "?", bt);
+    await popup.bringToFront(); await sleep(300);
+    let warnText = await popup.$eval("#hits-warn", (el) => (el.hidden ? "" : el.textContent));
+    check("判定不能のみ: 「確認できるタブがありません」", warnText.includes("確認できるタブがありません"), warnText);
+    check("判定不能のみ: 赤（bad）にしない", await popup.$eval("#hits-warn", (el) => el.classList.contains("bad")) === false);
+    let unknownItems = await popup.$$eval("#unknown-list li", (els) => els.map((e) => e.textContent));
+    check("判定不能タブ一覧に理由が出る", unknownItems.some((t) => t.includes("除外ドメイン")) && unknownItems.some((t) => t.includes("拡張が動作しないページ")), JSON.stringify(unknownItems));
+    check("判定不能タブ一覧に URL を出さない", !unknownItems.some((t) => t.includes("127.0.0.1") || t.includes("http") || t.includes("chrome://")), JSON.stringify(unknownItems));
+    check("判定不能タブ一覧はタイトルを出す", unknownItems.some((t) => t.includes("伝票")), JSON.stringify(unknownItems));
+    await clearSel(a);
+
+    // ---- 判定不能と一致 0 の混在 ----
+    const d = await browser.newPage(); await d.goto(`${baseLocal}/d`);
+    await selectIn(a, "src", "INV-2026-0042");
+    bt = await badge();
+    check("混在: 走査できたタブで 0 件なら赤の 0", bt === "0", bt);
+    await popup.bringToFront(); await sleep(300);
+    warnText = await popup.$eval("#hits-warn", (el) => (el.hidden ? "" : el.textContent));
+    check("混在: 「一致なし」と「一部確認できず（2件）」を併記", warnText.includes("一致はありません") && warnText.includes("2件"), warnText);
+    check("混在: 赤（bad）で表示", await popup.$eval("#hits-warn", (el) => el.classList.contains("bad")) === true);
+    await popup.$eval("#unknown", (el) => { el.open = true; });
+    await popup.screenshot({ path: path.join(outDir, "popup-unknown-mixed.png") });
+    await clearSel(a);
+    bt = await badge();
+    check("混在: 解除後はバッジが ON に戻る", bt === "ON", bt);
+    await d.close(); await v.close();
     await setSettings({});
 
     // ---- 再検証: 失効 → 無効化、設定がデフォルトに戻る ----
