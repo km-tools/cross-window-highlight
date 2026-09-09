@@ -5,6 +5,9 @@
 //  v3.0.0 Pro: settings.js の設定値（色・最小文字数・除外ドメイン・複数語・iframe）を
 //    ライセンス有効時のみ適用。無効時はデフォルト値で従来どおり動く。
 //    既存関数は変えず、入口（選択送信・HIGHLIGHT 受信・スタイル注入）で分岐する。
+//  v3.0.0 補足: 「完全一致」と「正規化一致（表記の違いを無視して一致）」を色分けし、
+//    件数を分けて返す。厳密比較モード（Pro）では正規化せず完全一致だけを探す。
+//    1語・厳密比較 OFF のときの一致判定ロジックは変更していない（色と集計の追加のみ）。
 //
 //  v2.3 での修正（非アクティブ画面のハイライト遅延対応）
 //   - 非アクティブなタブ／ウィンドウで、以前フォーカスしていた編集欄を
@@ -24,7 +27,9 @@
   window.__cwhLoaded = true;
 
   const MARK_CLASS = "cwh-mark";
+  const NORM_CLASS = "cwh-norm";          // 正規化一致（完全一致でない）
   const INPUT_CLASS = "cwh-input";
+  const INPUT_NORM_CLASS = "cwh-input-norm";
   const STYLE_ID = "cwh-style";
   const TOAST_ID = "cwh-toast";
 
@@ -44,6 +49,7 @@
 
   let currentText = "";
   let latestRevision = 0;
+  let lastHits = { exact: 0, norm: 0 }; // 直近の highlight() の内訳
 
   // ================= Pro 設定 =================
   let pro = { ...CWH_DEFAULT_SETTINGS };
@@ -125,11 +131,19 @@
         padding:0;
         border-radius:2px;
       }
+      mark.${MARK_CLASS}.${NORM_CLASS}{
+        background:${pro.normColor} !important;
+        text-decoration:underline dotted 2px #c96a00 !important;
+        text-underline-offset:2px;
+      }
       ${multi}
       .${INPUT_CLASS}{
         outline:3px solid ${pro.inputColor} !important;
         outline-offset:1px;
         background-color:color-mix(in srgb, ${pro.inputColor} 22%, white) !important;
+      }
+      .${INPUT_CLASS}.${INPUT_NORM_CLASS}{
+        outline-style:dashed !important;
       }
       #${TOAST_ID}{
         position:fixed;
@@ -195,11 +209,104 @@
     });
 
     document.querySelectorAll(`.${INPUT_CLASS}`).forEach((el) => {
-      el.classList.remove(INPUT_CLASS);
+      el.classList.remove(INPUT_CLASS, INPUT_NORM_CLASS);
     });
   }
 
-  function highlightNode(node, term) {
+  // ★ 完全一致 / 正規化一致の印を付けて集計する（判定ロジックには触らない）
+  function decorateMark(mark, exact) {
+    if (exact) {
+      lastHits.exact++;
+      return;
+    }
+    lastHits.norm++;
+    mark.classList.add(NORM_CLASS);
+    mark.title = chrome.i18n.getMessage("matchNormalizedTitle") || "";
+  }
+
+  function decorateInput(el, exact) {
+    el.classList.add(INPUT_CLASS);
+    if (exact) {
+      lastHits.exact++;
+    } else {
+      lastHits.norm++;
+      el.classList.add(INPUT_NORM_CLASS);
+      el.title = chrome.i18n.getMessage("matchNormalizedTitle") || "";
+    }
+  }
+
+  function isSkippedParent(parent) {
+    const tag = parent.tagName;
+    if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT" || tag === "TEXTAREA") return true;
+    if (parent.isContentEditable || parent.closest("[contenteditable]")) return true;
+    if (parent.closest(`mark.${MARK_CLASS}`)) return true;
+    return false;
+  }
+
+  // ★ Pro: 厳密比較。正規化せず、選択文字列そのものだけを探す。
+  function highlightStrict(rawTerms) {
+    injectStyle();
+    let count = 0;
+
+    document.querySelectorAll("input, textarea").forEach((el) => {
+      const value = el.value || "";
+      if (value && rawTerms.some((t) => value.includes(t))) {
+        decorateInput(el, true);
+        count++;
+      }
+    });
+
+    if (!document.body) return count;
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        const parent = node.parentElement;
+        if (!parent || isSkippedParent(parent)) return NodeFilter.FILTER_REJECT;
+        return rawTerms.some((t) => node.nodeValue.includes(t)) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      },
+    });
+
+    const targets = [];
+    let node;
+    while ((node = walker.nextNode())) targets.push(node);
+
+    for (const target of targets) {
+      const orig = target.nodeValue;
+      const ranges = [];
+      rawTerms.forEach((t, ti) => {
+        let from = 0;
+        let idx;
+        while ((idx = orig.indexOf(t, from)) !== -1) {
+          ranges.push([idx, idx + t.length, ti]);
+          from = idx + t.length;
+        }
+      });
+      if (!ranges.length) continue;
+      ranges.sort((a, b) => a[0] - b[0] || b[1] - a[1]);
+
+      const frag = document.createDocumentFragment();
+      let cursor = 0;
+      for (const [start, end, ti] of ranges) {
+        if (start < cursor) continue;
+        if (start > cursor) frag.appendChild(document.createTextNode(orig.slice(cursor, start)));
+        const mark = document.createElement("mark");
+        mark.className = ti === 0 || rawTerms.length === 1
+          ? MARK_CLASS
+          : `${MARK_CLASS} ${MARK_CLASS}-${((ti - 1) % CWH_MULTI_COLORS.length) + 1}`;
+        mark.textContent = orig.slice(start, end);
+        decorateMark(mark, true);
+        frag.appendChild(mark);
+        cursor = end;
+        count++;
+      }
+      if (cursor < orig.length) frag.appendChild(document.createTextNode(orig.slice(cursor)));
+      target.parentNode.replaceChild(frag, target);
+    }
+    return count;
+  }
+
+  function highlightNode(node, term, raw) {
     const orig = node.nodeValue;
     const { norm, map } = buildNormalized(orig);
 
@@ -225,6 +332,7 @@
       const mark = document.createElement("mark");
       mark.className = MARK_CLASS;
       mark.textContent = orig.slice(start, end);
+      decorateMark(mark, orig.slice(start, end) === raw);
       frag.appendChild(mark);
       cursor = end;
     }
@@ -241,11 +349,13 @@
   function highlightMulti(terms) {
     injectStyle();
     let count = 0;
+    const norms = terms.map((t) => t.norm);
 
     document.querySelectorAll("input, textarea").forEach((el) => {
-      const value = normalize(el.value || "");
-      if (value && terms.some((t) => value.includes(t))) {
-        el.classList.add(INPUT_CLASS);
+      const rawValue = el.value || "";
+      const value = normalize(rawValue);
+      if (value && norms.some((t) => value.includes(t))) {
+        decorateInput(el, terms.some((t) => rawValue.includes(t.raw)));
         count++;
       }
     });
@@ -264,7 +374,7 @@
         if (parent.isContentEditable || parent.closest("[contenteditable]")) return NodeFilter.FILTER_REJECT;
         if (parent.closest(`mark.${MARK_CLASS}`)) return NodeFilter.FILTER_REJECT;
         const n = normalize(node.nodeValue);
-        return terms.some((t) => n.includes(t)) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        return norms.some((t) => n.includes(t)) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
       },
     });
 
@@ -276,7 +386,7 @@
       const orig = target.nodeValue;
       const { norm, map } = buildNormalized(orig);
       const ranges = [];
-      terms.forEach((term, ti) => {
+      norms.forEach((term, ti) => {
         let from = 0;
         let idx;
         while ((idx = norm.indexOf(term, from)) !== -1) {
@@ -295,6 +405,7 @@
         const mark = document.createElement("mark");
         mark.className = ti === 0 ? MARK_CLASS : `${MARK_CLASS} ${MARK_CLASS}-${((ti - 1) % CWH_MULTI_COLORS.length) + 1}`;
         mark.textContent = orig.slice(start, end);
+        decorateMark(mark, orig.slice(start, end) === terms[ti].raw);
         frag.appendChild(mark);
         cursor = end;
         count++;
@@ -307,15 +418,30 @@
 
   function highlight(searchText) {
     clearHighlights();
+    lastHits = { exact: 0, norm: 0 };
+    const strict = pro.strictMatch === true;
 
     // ★ Pro: 複数語モード。1語のときは従来の経路と同じ処理になる。
     if (pro.multiKeyword) {
-      const terms = [...new Set(cwhSplitKeywords(searchText).map(normalize).filter((t) => t.length >= MIN_LEN()))];
+      const seen = new Set();
+      const terms = [];
+      for (const raw of cwhSplitKeywords(searchText)) {
+        const norm = strict ? raw : normalize(raw);
+        if (norm.length < MIN_LEN() || seen.has(norm)) continue;
+        seen.add(norm);
+        terms.push({ norm, raw });
+      }
       if (terms.length === 0) return 0;
-      if (terms.length > 1) return highlightMulti(terms);
-      searchText = terms[0];
+      if (terms.length > 1) return strict ? highlightStrict(terms.map((t) => t.raw)) : highlightMulti(terms);
+      searchText = terms[0].raw;
     }
 
+    // ★ Pro: 厳密比較。正規化しない。
+    if (strict) {
+      return searchText.length >= MIN_LEN() ? highlightStrict([searchText]) : 0;
+    }
+
+    const raw = searchText;
     const term = normalize(searchText);
     if (term.length < MIN_LEN()) return 0;
 
@@ -326,7 +452,7 @@
     document.querySelectorAll("input, textarea").forEach((el) => {
       const value = el.value || "";
       if (value && normalize(value).includes(term)) {
-        el.classList.add(INPUT_CLASS);
+        decorateInput(el, value.includes(raw));
         count++;
       }
     });
@@ -380,7 +506,7 @@
       while ((node = walker.nextNode())) targets.push(node);
 
       targets.forEach((target) => {
-        count += highlightNode(target, term);
+        count += highlightNode(target, term, raw);
       });
     }
 
@@ -462,7 +588,7 @@
     }
 
     const count = applyCurrentHighlight();
-    return { count };
+    return { count, exact: lastHits.exact, norm: lastHits.norm };
   }
 
   function clearRemoteHighlight(revision) {

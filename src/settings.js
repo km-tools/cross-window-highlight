@@ -11,6 +11,8 @@ const CWH_LICENSE_KEY = "cwh_license";
 const CWH_DEFAULT_SETTINGS = Object.freeze({
   markColor: "#ffe58a",     // mark の背景色
   inputColor: "#ffb300",    // input / textarea の枠色
+  normColor: "#ffd8a8",     // 正規化一致（表記の違いを無視して一致）の背景色
+  strictMatch: false,       // 厳密比較: 正規化せず完全一致だけを探す（Pro）
   minLen: 2,                // 最小文字数 1〜10
   excludedDomains: [],      // 除外ドメイン（例: "example.com"）
   hitBadge: false,          // ヒット件数をバッジに表示
@@ -30,6 +32,7 @@ function cwhSanitizeSettings(raw) {
   const isColor = (v) => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
   if (isColor(raw.markColor)) s.markColor = raw.markColor.toLowerCase();
   if (isColor(raw.inputColor)) s.inputColor = raw.inputColor.toLowerCase();
+  if (isColor(raw.normColor)) s.normColor = raw.normColor.toLowerCase();
 
   const n = Number(raw.minLen);
   if (Number.isInteger(n) && n >= 1 && n <= 10) s.minLen = n;
@@ -41,7 +44,7 @@ function cwhSanitizeSettings(raw) {
       .slice(0, 200);
   }
 
-  for (const k of ["hitBadge", "multiKeyword", "iframes"]) {
+  for (const k of ["hitBadge", "multiKeyword", "iframes", "strictMatch"]) {
     if (typeof raw[k] === "boolean") s[k] = raw[k];
   }
   return s;
