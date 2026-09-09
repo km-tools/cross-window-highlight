@@ -144,5 +144,73 @@
   },
   "popupSetReset": {
     "message": "Reset to defaults"
+  },
+  "matchNormalizedTitle": {
+    "message": "Matched ignoring formatting (e.g. hyphens, spaces, full-width, letter case)"
+  },
+  "popupHitsExact": {
+    "message": "Exact $N$",
+    "placeholders": {
+      "N": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupHitsNorm": {
+    "message": "Formatting differs $N$",
+    "placeholders": {
+      "N": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupNoScannable": {
+    "message": "No tab could be checked."
+  },
+  "popupNoMatch": {
+    "message": "No matches in other tabs."
+  },
+  "popupPartialUnknown": {
+    "message": "Some tabs could not be checked ($N$).",
+    "placeholders": {
+      "N": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupUnknownSummary": {
+    "message": "Tabs not checked ($N$)",
+    "placeholders": {
+      "N": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupUntitled": {
+    "message": "(untitled)"
+  },
+  "reasonBlocked": {
+    "message": "Extension cannot run here"
+  },
+  "reasonExcluded": {
+    "message": "Excluded domain"
+  },
+  "reasonInjectFailed": {
+    "message": "Page text not readable (e.g. PDF)"
+  },
+  "reasonTimeout": {
+    "message": "No response"
+  },
+  "reasonDiscarded": {
+    "message": "Tab is asleep"
+  },
+  "reasonDeferred": {
+    "message": "Deferred while editing"
+  },
+  "popupSetNormColor": {
+    "message": "Color for formatting-different matches"
+  },
+  "popupSetStrictMatch": {
+    "message": "Strict comparison (do not ignore formatting)"
   }
 }

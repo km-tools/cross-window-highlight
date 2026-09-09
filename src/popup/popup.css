@@ -179,3 +179,14 @@ kbd {
 }
 .link-btn { align-self: flex-start; background: none; border: 0; padding: 0; color: #2b6cb0; font: 12px/1.4 inherit; cursor: pointer; }
 .link-btn:hover { text-decoration: underline; }
+
+/* ---- 一致の内訳 / 判定不能 ---- */
+.hits { margin: 6px 0 0; font-size: 12px; color: var(--text); }
+.hits .norm { color: #a35a00; }
+.hint.warn { color: #a35a00; }
+.hint.warn.bad { color: #b42318; }
+.unknown { margin-top: 6px; font-size: 12px; }
+.unknown summary { cursor: pointer; color: var(--muted); }
+.unknown ul { margin: 4px 0 0; padding-left: 16px; }
+.unknown li { margin: 2px 0; word-break: break-all; }
+.unknown .reason { color: var(--muted); }

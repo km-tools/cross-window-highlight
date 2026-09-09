@@ -144,5 +144,73 @@
   },
   "popupSetReset": {
     "message": "設定を初期値に戻す"
+  },
+  "matchNormalizedTitle": {
+    "message": "表記の違いを無視して一致（例：ハイフン・空白・全角半角・大文字小文字）"
+  },
+  "popupHitsExact": {
+    "message": "完全 $N$",
+    "placeholders": {
+      "N": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupHitsNorm": {
+    "message": "表記違い $N$",
+    "placeholders": {
+      "N": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupNoScannable": {
+    "message": "確認できるタブがありません。"
+  },
+  "popupNoMatch": {
+    "message": "他のタブに一致はありません。"
+  },
+  "popupPartialUnknown": {
+    "message": "一部のタブは確認できませんでした（$N$件）。",
+    "placeholders": {
+      "N": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupUnknownSummary": {
+    "message": "確認できなかったタブ（$N$）",
+    "placeholders": {
+      "N": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupUntitled": {
+    "message": "（無題）"
+  },
+  "reasonBlocked": {
+    "message": "拡張が動作しないページ"
+  },
+  "reasonExcluded": {
+    "message": "除外ドメイン"
+  },
+  "reasonInjectFailed": {
+    "message": "本文を読めないページ（PDF など）"
+  },
+  "reasonTimeout": {
+    "message": "応答がありませんでした"
+  },
+  "reasonDiscarded": {
+    "message": "休止中のタブ"
+  },
+  "reasonDeferred": {
+    "message": "入力中のため保留"
+  },
+  "popupSetNormColor": {
+    "message": "表記違い一致の色"
+  },
+  "popupSetStrictMatch": {
+    "message": "厳密比較（表記の違いを無視しない）"
   }
 }

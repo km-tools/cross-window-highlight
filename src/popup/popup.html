@@ -27,6 +27,12 @@
   <section class="card">
     <h2 data-i18n="popupCurrentLabel"></h2>
     <p class="current" id="current"></p>
+    <p class="hits" id="hits" hidden></p>
+    <p class="hint warn" id="hits-warn" hidden></p>
+    <details class="unknown" id="unknown" hidden>
+      <summary id="unknown-summary"></summary>
+      <ul id="unknown-list"></ul>
+    </details>
   </section>
 
   <section class="card">
@@ -76,6 +82,14 @@
       <div class="row">
         <label for="s-inputColor" data-i18n="popupSetInputColor"></label>
         <input type="color" id="s-inputColor">
+      </div>
+      <div class="row">
+        <label for="s-normColor" data-i18n="popupSetNormColor"></label>
+        <input type="color" id="s-normColor">
+      </div>
+      <div class="row check">
+        <input type="checkbox" id="s-strictMatch">
+        <label for="s-strictMatch" data-i18n="popupSetStrictMatch"></label>
       </div>
       <div class="row">
         <label for="s-minLen" data-i18n="popupSetMinLen"></label>
