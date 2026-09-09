@@ -181,6 +181,8 @@ src/            拡張本体（ストアに出すのはこのフォルダ）
   icons/          アイコン（icon.svg が元絵）
 tools/          開発用スクリプト（npm 依存はここだけ）
 docs/           プライバシーポリシーなど（GitHub Pages 用）
+store/          ストア申請の素材（説明文、権限の説明、スクリーンショットと撮影用ページ）
+package.sh      ストア提出用 ZIP を dist/ に作る
 ```
 
 ## 開発
@@ -195,6 +197,9 @@ cd tools && npm install
 | `node tools/e2e.js --lang=ja` | 実機 Chrome で動作確認（日本語） |
 | `node tools/e2e.js --lang=en` | 同上（英語） |
 | `node tools/e2e-pro.js` | Pro 機能とライセンス（モック Polar サーバーで確認） |
+| `node tools/shoot-store.js` | ストア用スクリーンショット 3 枚を実機で撮り直す。行数の多い一覧での走査時間も表示 |
+| `./package.sh` | `dist/cross-window-highlight-<version>.zip` を作る（src/ の中身だけ、manifest がルート） |
+| `./package.sh --verify` | ZIP を展開して e2e を全部通す（ストア提出前に実行） |
 
 e2e は puppeteer-core でインストール済みの Chrome を起動し、2タブ間のハイライト、contenteditable の保護、ポップアップの ON / OFF、多言語表示を確認します。Chrome 137 以降は `--load-extension` が使えないため、CDP 経由で読み込んでいます。
 
