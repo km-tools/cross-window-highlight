@@ -9,7 +9,7 @@ const http = require("http");
 
 const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const root = path.resolve(__dirname, "..");
-const ext = path.join(root, "src");
+const ext = process.env.CWH_EXT_DIR || path.join(root, "src"); // package.sh --verify は展開した ZIP を指す
 const outDir = path.join(root, "tools", "shots");
 fs.mkdirSync(outDir, { recursive: true });
 
