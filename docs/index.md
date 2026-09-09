@@ -19,6 +19,14 @@ Built for side-by-side checking and reconciliation work.
 - ON / OFF: `Ctrl+Shift+H`（Mac: `Cmd+Shift+H`）
 - そのページのハイライトだけ消す / Clear highlights on the current page only: `Esc`
 
+## 一致の見かた / Reading the colors
+
+黄色は**完全一致**、薄い橙 + 点線は**表記違いの一致**（空白・ハイフン・全角半角・大文字小文字の違いを無視して一致）。光った＝正しい、ではありません。
+Yellow means an **exact match**. Light orange with a dotted underline means the match **differs in formatting** (spaces, hyphens, full-width/half-width, letter case were ignored). A highlight is not proof of a correct transcription.
+
+一致が 0 件のときは、「一致なし」と「確認できなかったタブがある」を分けて表示します。
+When nothing matches, the popup tells you whether there was truly no match or some tabs could not be checked.
+
 ## プライバシー / Privacy
 
 データは一切収集しません。選択した文字列は端末内のタブ間でしか受け渡されません。

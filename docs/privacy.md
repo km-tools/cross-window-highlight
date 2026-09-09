@@ -1,7 +1,7 @@
 # プライバシーポリシー / Privacy Policy
 
 **Cross-Window Highlight（クロスウィンドウ・ハイライト）**
-最終更新 / Last updated: 2026-09-07
+最終更新 / Last updated: 2026-09-10
 
 ---
 
@@ -17,6 +17,8 @@
 
 - 現在の選択内容は、ブラウザを閉じると消える一時領域（`chrome.storage.session`）に保持します。再読み込みしたタブにハイライトを復元するためです
 - ON / OFF の設定だけを端末内（`chrome.storage.local`）に保存します
+
+一致の判定も端末内で行います。空白・各種ハイフン・全角半角・大文字小文字の違いを無視して一致させるため、**光った箇所が選択文字列と完全に同じとは限りません**。完全一致と表記違いの一致は色で区別し、無視している文字の一覧は [README の「一致の判定」](https://github.com/km-tools/cross-window-highlight#一致の判定何を無視して一致させているか) に載せています。
 
 ### 権限（permission）が必要な理由
 
@@ -66,6 +68,8 @@ Selected text is passed **only between the tabs and windows open on your own dev
 
 - The current selection is kept in a temporary area that is cleared when the browser closes (`chrome.storage.session`), so highlights can be restored on a reloaded tab
 - Only the ON / OFF setting is saved on your device (`chrome.storage.local`)
+
+Matching also happens on your device. Because it ignores differences in spaces, hyphens, full-width/half-width forms, and letter case, **a highlighted match is not guaranteed to be character-for-character identical** to your selection. Exact and formatting-different matches are shown in different colors; the full list of ignored characters is in the [README](https://github.com/km-tools/cross-window-highlight#一致の判定何を無視して一致させているか).
 
 ### Why each permission is needed
 
