@@ -5,3 +5,6 @@ node_modules/
 Thumbs.db
 tools/shots/
 dist/
+notes/
+/CLAUDE.md
+tools/node_modules/

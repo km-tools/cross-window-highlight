@@ -25,7 +25,7 @@ Select text in one window, and every match in your other open tabs and windows l
 - Works across separate windows as well as tabs
 - If a form field contains the same value, that field gets an outline
 - Clearing the selection removes the highlights. Esc clears the current page only
-- Toggle ON / OFF from the toolbar icon or with Ctrl+Shift+H (Cmd+Shift+H on Mac)
+- Toggle ON / OFF with the switch in the toolbar icon's popup, or with Ctrl+Shift+H (Cmd+Shift+H on Mac)
 
 This is a tool that supports checking by a person. It does not judge or change anything for you.
 

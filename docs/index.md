@@ -37,4 +37,5 @@ We collect no data. Selected text never leaves your device.
 ## リンク / Links
 
 - ソースコード / Source: [GitHub](https://github.com/km-tools/cross-window-highlight)（MIT License）
-- Chrome ウェブストア / Chrome Web Store: 準備中 / coming soon
+- Chrome ウェブストア / Chrome Web Store: 審査中 / under review
+<!-- 公開後にこの行と差し替える: - [Chrome ウェブストア / Chrome Web Store](https://chromewebstore.google.com/detail/<拡張ID>) -->
